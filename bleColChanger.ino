@@ -11,10 +11,23 @@
  All text above, and the splash screen below must be included in
  any redistribution
 *********************************************************************/
-
+#include <Adafruit_AW9523.h>
 #include <bluefruit.h>
+
 // OTA DFU service
 BLEDfu bledfu;
+
+//expander code
+Adafruit_AW9523 aw;
+
+uint8_t LedPin = 0;  // 0 thru 15
+uint8_t sol1 = 1;
+uint8_t sol2 = 2;
+uint8_t sol3 = 3;
+uint8_t sol4 = 4;
+uint8_t sol5 = 5;
+uint8_t sol6 = 6;
+uint8_t sol7 = 7;
 
 // Uart over BLE service
 BLEUart bleuart;
@@ -24,17 +37,46 @@ uint8_t readPacket (BLEUart *ble_uart, uint16_t timeout);
 float   parsefloat (uint8_t *buffer);
 void    printHex   (const uint8_t * data, const uint32_t numBytes);
 
+// pins for the solenoid control
+const int sol_1 = 17; //15 is actually A0
+const int sol_2 = 18; //15 is actually A1
+int myPins[] = {17, 18};
+
 // Packet buffer
 extern uint8_t packetbuffer[];
 
 void setup(void)
 {
+  //the setup for the solenoids
+  //pinMode(7, OUTPUT);
+  //pinMode(11, OUTPUT);
+  
   Serial.begin(115200);
   while ( !Serial ) delay(10);   // for nrf52840 with native usb
 
   Serial.println(F("Adafruit Bluefruit52 Controller App Example"));
   Serial.println(F("-------------------------------------------"));
 
+  //Expander initialization
+  while (!Serial) delay(1);  // wait for serial port to open
+  
+  Serial.println("Adafruit AW9523 GPIO Expander test!");
+
+  if (! aw.begin(0x58)) {
+    Serial.println("AW9523 not found? Check wiring!");
+    while (1) delay(10);  // halt forever
+  }
+
+  Serial.println("AW9523 found!");
+  aw.pinMode(LedPin, OUTPUT);
+  aw.pinMode(sol1, OUTPUT);
+  aw.pinMode(sol2, OUTPUT);
+  aw.pinMode(sol3, OUTPUT);
+  aw.pinMode(sol4, OUTPUT);
+  aw.pinMode(sol5, OUTPUT);
+  aw.pinMode(sol6, OUTPUT);
+  aw.pinMode(sol7, OUTPUT);
+  
   Bluefruit.begin();
   Bluefruit.setTxPower(4);    // Check bluefruit.h for supported values
 
@@ -50,6 +92,47 @@ void setup(void)
   Serial.println(F("Please use Adafruit Bluefruit LE app to connect in Controller mode"));
   Serial.println(F("Then activate/use the sensors, color picker, game controller, etc!"));
   Serial.println();  
+}
+
+void playSong(void)
+{
+  Serial.println("playSong reached");
+  aw.digitalWrite(sol1, HIGH);
+  delay(20);
+  aw.digitalWrite(sol1, LOW);
+  delay(1000);
+  aw.digitalWrite(sol2, HIGH);
+  delay(20);
+  aw.digitalWrite(sol2, LOW);
+  delay(1000);
+  aw.digitalWrite(sol3, HIGH);
+  delay(20);
+  aw.digitalWrite(sol3, LOW);
+  delay(1000);
+  aw.digitalWrite(sol4, HIGH);
+  delay(20);
+  aw.digitalWrite(sol4, LOW);
+  delay(1000);
+  aw.digitalWrite(sol5, HIGH);
+  delay(20);
+  aw.digitalWrite(sol5, LOW);
+  delay(1000);
+  aw.digitalWrite(sol6, HIGH);
+  delay(20);
+  aw.digitalWrite(sol6, LOW);
+  delay(1000);
+  aw.digitalWrite(sol7, HIGH);
+  delay(20);
+  aw.digitalWrite(sol7, LOW);
+  delay(1000);
+  
+}
+void playNote(int note){
+  if(note != 8){
+    aw.digitalWrite(note, HIGH);
+    delay(20);
+    aw.digitalWrite(note, LOW);
+  }
 }
 
 void startAdv(void)
@@ -116,72 +199,12 @@ void loop(void)
     Serial.print ("Button "); Serial.print(buttnum);
     if (pressed) {
       Serial.println(" pressed");
+      playNote(buttnum);
+      //playSong();
     } else {
       Serial.println(" released");
     }
   }
 
-  // GPS Location
-  /*if (packetbuffer[1] == 'L') {
-    float lat, lon, alt;
-    lat = parsefloat(packetbuffer+2);
-    lon = parsefloat(packetbuffer+6);
-    alt = parsefloat(packetbuffer+10);
-    Serial.print("GPS Location\t");
-    Serial.print("Lat: "); Serial.print(lat, 4); // 4 digits of precision!
-    Serial.print('\t');
-    Serial.print("Lon: "); Serial.print(lon, 4); // 4 digits of precision!
-    Serial.print('\t');
-    Serial.print(alt, 4); Serial.println(" meters");
-  }*/
 
-  // Accelerometer
-  /*if (packetbuffer[1] == 'A') {
-    float x, y, z;
-    x = parsefloat(packetbuffer+2);
-    y = parsefloat(packetbuffer+6);
-    z = parsefloat(packetbuffer+10);
-    Serial.print("Accel\t");
-    Serial.print(x); Serial.print('\t');
-    Serial.print(y); Serial.print('\t');
-    Serial.print(z); Serial.println();
-  }*/
-
-  // Magnetometer
-  /*if (packetbuffer[1] == 'M') {
-    float x, y, z;
-    x = parsefloat(packetbuffer+2);
-    y = parsefloat(packetbuffer+6);
-    z = parsefloat(packetbuffer+10);
-    Serial.print("Mag\t");
-    Serial.print(x); Serial.print('\t');
-    Serial.print(y); Serial.print('\t');
-    Serial.print(z); Serial.println();
-  }*/
-
-  // Gyroscope
-  /*if (packetbuffer[1] == 'G') {
-    float x, y, z;
-    x = parsefloat(packetbuffer+2);
-    y = parsefloat(packetbuffer+6);
-    z = parsefloat(packetbuffer+10);
-    Serial.print("Gyro\t");
-    Serial.print(x); Serial.print('\t');
-    Serial.print(y); Serial.print('\t');
-    Serial.print(z); Serial.println();
-  }*/
-
-  // Quaternions
-  /*if (packetbuffer[1] == 'Q') {
-    float x, y, z, w;
-    x = parsefloat(packetbuffer+2);
-    y = parsefloat(packetbuffer+6);
-    z = parsefloat(packetbuffer+10);
-    w = parsefloat(packetbuffer+14);
-    Serial.print("Quat\t");
-    Serial.print(x); Serial.print('\t');
-    Serial.print(y); Serial.print('\t');
-    Serial.print(z); Serial.print('\t');
-    Serial.print(w); Serial.println();
-  }*/
 }
